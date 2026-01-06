@@ -1,7 +1,7 @@
 packer {
   required_plugins {
-    amazon = {
-      source  = "github.com/hashicorp/amazon"
+    googlecompute = {
+      source  = "github.com/hashicorp/googlecompute"
       version = "~> 1"
     }
     ansible = {
@@ -16,28 +16,27 @@ locals {
   user1_password = vault("/secret/data/packer/ansible", "user1_password")
 }
 
+source "googlecompute" "ubuntu" {
+  project_id   = "packer-automation-483407"
+  zone         = "us-central1-a"
 
+  image_name   = "packer-ubuntu-hardened-{{timestamp}}"
+  image_family = "packer-ubuntu-hardened"
 
-source "amazon-ebs" "ubuntu" {
-  ami_name      = "packer-ubuntu-hardened-{{timestamp}}"
-  instance_type = "t3.micro"
-  region        = "us-west-2"
+  machine_type = "e2-micro"
 
-  source_ami_filter {
-    filters = {
-      name                = "ubuntu/images/*ubuntu-jammy-22.04-amd64-server-*"
-      root-device-type    = "ebs"
-      virtualization-type = "hvm"
-    }
-    most_recent = true
-    owners      = ["099720109477"]
-  }
+  source_image_family  = "ubuntu-2204-lts"
+  source_image_project_id = ["ubuntu-os-cloud"]
 
-  ssh_username = "ubuntu"
+  ssh_username = "packer"
+  
+  credentials_file = "/home/althaf4321/packer-sa-key.json"
+
 }
 
+
 build {
-  sources = ["source.amazon-ebs.ubuntu"]
+  sources = ["source.googlecompute.ubuntu"]
 
   provisioner "shell" {
     inline = [

@@ -9,16 +9,12 @@
       - vim
       - htop
       - git
-      - python3-pip
+      - python3-passlib
     state: present
-
-- name: Install passlib for Python 3
-  pip:
-    name: passlib
-    executable: pip3
 
 - name: Set timezone to UTC
   timezone:
     name: Etc/UTC
+
 
 

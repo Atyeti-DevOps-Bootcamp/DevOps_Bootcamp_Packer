@@ -56,7 +56,7 @@ build {
 provisioner "shell" {
   interpreter = ["/bin/bash", "-c"]
   inline = [
-    "set -euxo pipefail",
+    "cloud-init status --wait",
 
     # Wait for VM initialization
     "sudo cloud-init status --wait",

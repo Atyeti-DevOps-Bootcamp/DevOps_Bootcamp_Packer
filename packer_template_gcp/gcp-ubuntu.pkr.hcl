@@ -11,29 +11,33 @@ packer {
   }
 }
 
-locals {
-  admin_password = vault("/secret/data/packer/ansible", "admin_password")
-  user1_password = vault("/secret/data/packer/ansible", "user1_password")
+# Variables populated by secrets.auto.pkrvars.hcl
+variable "admin_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "user1_password" {
+  type      = string
+  sensitive = true
 }
 
 source "googlecompute" "ubuntu" {
-  project_id   = "packer-automation-483407"
-  zone         = "us-central1-a"
+  project_id = "packer-automation-483407"
+  zone       = "us-central1-a"
 
   image_name   = "packer-ubuntu-hardened-{{timestamp}}"
   image_family = "packer-ubuntu-hardened"
 
   machine_type = "e2-micro"
 
-  source_image_family  = "ubuntu-2204-lts"
+  source_image_family     = "ubuntu-2204-lts"
   source_image_project_id = ["ubuntu-os-cloud"]
 
   ssh_username = "packer"
-  
-  credentials_file = "/home/althaf4321/packer-sa-key.json"
 
+  # Credentials picked from GOOGLE_APPLICATION_CREDENTIALS
 }
-
 
 build {
   sources = ["source.googlecompute.ubuntu"]
@@ -49,16 +53,17 @@ build {
 
   provisioner "ansible" {
     playbook_file = "${path.root}/ansible/playbook.yml"
-    use_proxy = false
+    use_proxy     = false
 
     extra_arguments = [
       "--become",
+      "--extra-vars",
+      jsonencode({
+        admin_password = var.admin_password
+        user1_password = var.user1_password
+      }),
       "-e", "ansible_python_interpreter=/usr/bin/python3",
-      "-e", "ansible_remote_tmp=/tmp/.ansible",
-      
-        "-e", "admin_password=${local.admin_password}",
-      "-e", "user1_password=${local.user1_password}"
+      "-e", "ansible_remote_tmp=/tmp/.ansible"
     ]
   }
 }
-

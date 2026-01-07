@@ -42,14 +42,52 @@ source "googlecompute" "ubuntu" {
 build {
   sources = ["source.googlecompute.ubuntu"]
 
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get update -y",
-      "sudo apt-get install -y python3 python3-apt python3-passlib",
-      "sudo mkdir -p /tmp/.ansible",
-      "sudo chmod 777 /tmp/.ansible"
-    ]
-  }
+  # provisioner "shell" {
+  #   inline = [
+  #     "sudo apt-get update -y",
+  #     "sudo apt-get install -y python3 python3-apt python3-passlib",
+  #     "sudo mkdir -p /tmp/.ansible",
+  #     "sudo chmod 777 /tmp/.ansible"
+  #   ]
+  # }
+  # ---------------------------------
+# Safe APT handling for Ubuntu (Packer)
+# ---------------------------------
+provisioner "shell" {
+  inline = [
+    "set -euxo pipefail",
+
+    # Wait for VM initialization
+    "sudo cloud-init status --wait",
+
+    # Stop and permanently disable background apt jobs
+    "sudo systemctl stop apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
+    "sudo systemctl disable apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
+    "sudo systemctl mask apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
+    "sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer || true",
+    "sudo systemctl disable apt-daily.timer apt-daily-upgrade.timer || true",
+    "sudo systemctl mask apt-daily.timer apt-daily-upgrade.timer || true",
+
+    # Wait until apt / dpkg is fully free
+    "while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done",
+    "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done",
+    "while sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; done",
+
+    # Recover apt safely
+    "sudo rm -rf /var/lib/apt/lists/partial/*",
+    "sudo apt-get clean",
+    "sudo dpkg --configure -a",
+
+    # Update and install packages
+    "sudo apt-get update -y",
+    "sudo apt-get install -y python3 python3-apt python3-passlib",
+
+    # Prepare Ansible temp directory
+    "sudo mkdir -p /tmp/.ansible",
+    "sudo chmod 777 /tmp/.ansible"
+  ]
+}
+
 
   provisioner "ansible" {
     playbook_file = "${path.root}/ansible/playbook.yml"

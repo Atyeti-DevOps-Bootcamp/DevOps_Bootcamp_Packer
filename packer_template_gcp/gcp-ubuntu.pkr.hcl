@@ -54,7 +54,7 @@ build {
 # Safe APT handling for Ubuntu (Packer)
 # ---------------------------------
 provisioner "shell" {
-  shell = "/bin/bash"
+  interpreter = ["/bin/bash", "-c"]
   inline = [
     "set -euxo pipefail",
 

@@ -11,7 +11,7 @@ packer {
   }
 }
 
-# Variables populated by secrets.auto.pkrvars.hcl
+# Variables populated by secrets.auto.pkrvars.hcl file
 variable "admin_password" {
   type      = string
   sensitive = true
@@ -45,7 +45,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update -y",
-      "sudo apt-get install -y python3 python3-apt",
+      "sudo apt-get install -y python3 python3-apt python3-passlib",
       "sudo mkdir -p /tmp/.ansible",
       "sudo chmod 777 /tmp/.ansible"
     ]
@@ -67,4 +67,3 @@ build {
     ]
   }
 }
-#

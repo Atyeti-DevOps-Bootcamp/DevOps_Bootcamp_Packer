@@ -52,25 +52,29 @@ build {
   # Shell Provisioner (APT SAFE)
   # ---------------------------------
   provisioner "shell" {
-    inline = [
-      "echo 'Waiting for cloud-init to finish...'",
-      "sudo cloud-init status --wait",
+  inline = [
+    "echo 'Waiting for cloud-init...'",
+    "sudo cloud-init status --wait",
 
-      "echo 'Resetting apt state...'",
-      "sudo rm -rf /var/lib/apt/lists/*",
-      "sudo apt-get clean",
+    "echo 'Resetting apt state...'",
+    "sudo rm -rf /var/lib/apt/lists/*",
+    "sudo apt-get clean",
 
-      "echo 'Updating apt cache...'",
-      "sudo apt-get update -y",
+    "echo 'Updating apt...'",
+    "sudo apt-get update -y",
 
-      "echo 'Installing Ansible dependencies...'",
-      "sudo apt-get install -y python3 python3-apt python3-passlib",
+    "echo 'Installing Python + Ansible dependencies...'",
+    "sudo apt-get install -y python3 python3-apt python3-pip",
 
-      "echo 'Preparing Ansible temp directory...'",
-      "sudo mkdir -p /tmp/.ansible",
-      "sudo chmod 777 /tmp/.ansible"
-    ]
-  }
+    "echo 'Installing passlib via pip (required for password_hash)...'",
+    "sudo pip3 install --no-cache-dir passlib",
+
+    "echo 'Preparing Ansible temp directory...'",
+    "sudo mkdir -p /tmp/.ansible",
+    "sudo chmod 777 /tmp/.ansible"
+  ]
+}
+
 
   # -----------------------------
   # Ansible Provisioner

@@ -45,14 +45,7 @@ jobs:
           packer --version
           vault --version
 
-      # -----------------------------
-      # Install passlib on GitHub Runner
-      # -----------------------------
-      - name: Install passlib on runner
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install passlib
-
+      
       # -----------------------------
       # Start Vault Dev Server
       # -----------------------------

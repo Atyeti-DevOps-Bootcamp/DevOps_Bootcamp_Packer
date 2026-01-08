@@ -9,8 +9,7 @@ packer {
       version = "~> 1"
     }
   }
-}
-
+} 
 # Variables populated by secrets.auto.pkrvars.hcl file
 variable "admin_password" {
   type      = string
@@ -40,56 +39,45 @@ source "googlecompute" "ubuntu" {
 }
 
 build {
+  name    = "gcp-ubuntu-image"
   sources = ["source.googlecompute.ubuntu"]
 
-  # provisioner "shell" {
-  #   inline = [
-  #     "sudo apt-get update -y",
-  #     "sudo apt-get install -y python3 python3-apt python3-passlib",
-  #     "sudo mkdir -p /tmp/.ansible",
-  #     "sudo chmod 777 /tmp/.ansible"
-  #   ]
-  # }
-  # ---------------------------------
-# Safe APT handling for Ubuntu (Packer)
-# ---------------------------------
-provisioner "shell" {
-  interpreter = ["/bin/bash", "-c"]
-  inline = [
-    "cloud-init status --wait",
+  provisioner "shell" {
+    inline = [
+      "set -eu",
 
-    # Wait for VM initialization
-    "sudo cloud-init status --wait",
+      # Wait for cloud-init
+      "sudo cloud-init status --wait",
 
-    # Stop and permanently disable background apt jobs
-    "sudo systemctl stop apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
-    "sudo systemctl disable apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
-    "sudo systemctl mask apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
-    "sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer || true",
-    "sudo systemctl disable apt-daily.timer apt-daily-upgrade.timer || true",
-    "sudo systemctl mask apt-daily.timer apt-daily-upgrade.timer || true",
+      # Disable background apt services safely
+      "sudo systemctl stop apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
+      "sudo systemctl disable apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
+      "sudo systemctl mask apt-daily.service apt-daily-upgrade.service unattended-upgrades || true",
 
-    # Wait until apt / dpkg is fully free
-    "while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done",
-    "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done",
-    "while sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; done",
+      "sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer || true",
+      "sudo systemctl disable apt-daily.timer apt-daily-upgrade.timer || true",
+      "sudo systemctl mask apt-daily.timer apt-daily-upgrade.timer || true",
 
-    # Recover apt safely
-    "sudo rm -rf /var/lib/apt/lists/partial/*",
-    "sudo apt-get clean",
-    "sudo dpkg --configure -a",
+      # Wait for apt locks
+      "while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done",
+      "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done",
+      "while sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; done",
 
-    # Update and install packages
-    "sudo apt-get update -y",
-    "sudo apt-get install -y python3 python3-apt python3-passlib",
+      # Recover apt state
+      "sudo rm -rf /var/lib/apt/lists/partial/*",
+      "sudo apt-get clean",
+      "sudo dpkg --configure -a",
 
-    # Prepare Ansible temp directory
-    "sudo mkdir -p /tmp/.ansible",
-    "sudo chmod 777 /tmp/.ansible"
-  ]
-}
-
-
+      # Update and install packages (NON-INTERACTIVE)
+      "sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update -y",
+      "sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y python3",
+      #"sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y python3-apt python3-passlib ", 
+      #"sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a python3 --version",
+      # Prepare Ansible temp directory
+      "sudo mkdir -p /tmp/.ansible",
+      "sudo chmod 777 /tmp/.ansible"
+    ]
+  }
   provisioner "ansible" {
     playbook_file = "${path.root}/ansible/playbook.yml"
     use_proxy     = false

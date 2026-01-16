@@ -173,15 +173,20 @@ jobs:
         run: |
           cd terraform-gcp
           terraform plan \
-            -var="image_name=${{ needs.packer-build.outputs.image_name }}"
-    
+            -input=false \
+              -var="image_name=${{ needs.packer-build.outputs.image_name }}" \
+              -var="ssh_public_key=$(cat ../gha_ssh_key.pub)"
+
       - name: Terraform Apply
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp-key.json
         run: |
           cd terraform-gcp
           terraform apply \
+            -input=false \
+            -auto-approve \
             -var="image_name=${{ needs.packer-build.outputs.image_name }}" 
+            -var="ssh_public_key=$(cat ../gha_ssh_key.pub)"
             
       - name: Show Terraform Outputs
         run: |

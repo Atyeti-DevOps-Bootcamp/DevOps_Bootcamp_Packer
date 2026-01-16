@@ -189,7 +189,12 @@ jobs:
             -var="image_name=${{ needs.packer-build.outputs.image_name }}" \
             -var="ssh_public_key=$(cat ../gha_ssh_key.pub)" \
             -auto-approve
+      - name: Show Terraform Outputs
+        run: |
+          cd terraform-gcp
+          terraform output
 
+      
       #ADDED
       - name: Validate VM Users & Permissions
         run: |

@@ -20,5 +20,6 @@ variable "zone" {
 }
 
 variable "ssh_public_key" {
-  type = string
+  type    = string
+  default = ""
 }

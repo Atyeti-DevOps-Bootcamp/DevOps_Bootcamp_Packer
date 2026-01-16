@@ -1,5 +1,4 @@
 name: Packer GCP Build
-
 on:
   push:
     branches:

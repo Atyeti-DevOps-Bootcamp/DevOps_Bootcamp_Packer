@@ -166,7 +166,12 @@ jobs:
         run: |
           cd terraform-gcp
           terraform validate
-
+        
+      - name: Generate ephemeral SSH key (CI)
+        run: |
+          ssh-keygen -t ed25519 -f gha_ssh_key -N ""
+          ls -l gha_ssh_key* 
+ 
       - name: Terraform Plan
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp-key.json
@@ -185,7 +190,7 @@ jobs:
           terraform apply \
             -input=false \
             -auto-approve \
-            -var="image_name=${{ needs.packer-build.outputs.image_name }}" 
+            -var="image_name=${{ needs.packer-build.outputs.image_name }}" \
             -var="ssh_public_key=$(cat ../gha_ssh_key.pub)"
             
       - name: Show Terraform Outputs
